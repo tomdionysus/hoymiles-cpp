@@ -7,11 +7,9 @@
 
 static void usage(const char* prog){
     std::cerr <<
-    "Usage: " << prog << " [options]\n"
-    "  --in <path>       Input RAW int16 LE mono file to demodulate\n"
-    "  --blocks <n>      Number of 4-FSK blocks for DATA (1,2,4,8,16; default 8)\n"
-    "  --sps <samples>   Samples per DATA symbol (default 3000)\n"
-    "  --help            Show this help\n";
+    "Usage: " << prog << " [options]\n" <<
+    "  --ip <ipaddress>   IPv4 address of the device\n" <<
+    "  --help             Print usage/help\n";
 }
 
 static bool arg_has(int argc, char** argv, const std::string& key){
@@ -41,10 +39,11 @@ static bool arg_get_str(int argc, char** argv, const std::string& key, std::stri
 }
 
 int main(int argc, char** argv) {
-    if (arg_has(argc, argv, "--help")) {
+    if (argc == 1 || !arg_has(argc, argv, "--ip") || arg_has(argc, argv, "--help")) {
         usage(argv[0]);
         return 0;
     }
 
-    std::cout << "Ping Test" << std::endl;
+    std::cout << "Device Info" << std::endl;
+    std::cout << "-----------" << std::endl;
 }
