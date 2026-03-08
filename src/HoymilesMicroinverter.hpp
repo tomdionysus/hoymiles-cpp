@@ -16,6 +16,15 @@
 
 #include "APPInfomationData.pb.h"
 #include "RealDataNew.pb.h"
+#include "APPHeartbeatPB.pb.h"
+#include "AppGetHistED.pb.h"
+#include "AppGetHistPower.pb.h"
+#include "AutoSearch.pb.h"
+#include "DevConfig.pb.h"
+#include "GetConfig.pb.h"
+#include "GPSTData.pb.h"
+#include "NetworkInfo.pb.h"
+#include "RealData.pb.h"
 
 class HoymilesMicroinverter {
 public:
@@ -328,6 +337,212 @@ public:
         return out;
     }
 
+        HBReqDTO get_heartbeat() {
+        ensure_connected();
+
+        HBResDTO req;
+        req.set_offset(0);
+        req.set_time(static_cast<int32_t>(std::time(nullptr)));
+        req.set_time_ymd_hms("1970-01-01 00:00:00");
+
+        return send_request<HBResDTO, HBReqDTO>(CMD_HEARTBEAT, req);
+    }
+
+    RealDataReqDTO get_real_data_legacy() {
+        ensure_connected();
+
+        RealDataResDTO req;
+        req.set_time_ymd_hms("1970-01-01 00:00:00");
+        req.set_package_now(0);
+        req.set_error_code(0);
+        req.set_offset(0);
+        req.set_time(static_cast<int32_t>(std::time(nullptr)));
+
+        return send_request<RealDataResDTO, RealDataReqDTO>(CMD_REAL_DATA_LEGACY, req);
+    }
+
+    RealDataNewReqDTO get_real_data_complete() {
+        ensure_connected();
+
+        RealDataNewReqDTO combined;
+
+        for (int cp = 0;; ++cp) {
+            RealDataNewResDTO req;
+            req.set_time_ymd_hms("1970-01-01 00:00:00");
+            req.set_cp(cp);
+            req.set_error_code(0);
+            req.set_offset(0);
+            req.set_time(static_cast<int32_t>(std::time(nullptr)));
+
+            RealDataNewReqDTO part =
+                send_request<RealDataNewResDTO, RealDataNewReqDTO>(CMD_REAL_DATA, req);
+
+            if (cp == 0) {
+                combined = part;
+                if (part.ap() <= 1) {
+                    break;
+                }
+            } else {
+                combined.mutable_meter_data()->MergeFrom(part.meter_data());
+                combined.mutable_rp_data()->MergeFrom(part.rp_data());
+                combined.mutable_rsd_data()->MergeFrom(part.rsd_data());
+                combined.mutable_sgs_data()->MergeFrom(part.sgs_data());
+                combined.mutable_tgs_data()->MergeFrom(part.tgs_data());
+                combined.mutable_pv_data()->MergeFrom(part.pv_data());
+            }
+
+            if (cp + 1 >= combined.ap()) {
+                break;
+            }
+        }
+
+        return combined;
+    }
+
+    GetConfigReqDTO get_config() {
+        ensure_connected();
+
+        GetConfigResDTO req;
+        req.set_offset(0);
+        req.set_time(static_cast<uint32_t>(std::time(nullptr) - 60));
+
+        return send_request<GetConfigResDTO, GetConfigReqDTO>(CMD_GET_CONFIG, req);
+    }
+
+    NetworkInfoReqDTO get_network_info() {
+        ensure_connected();
+
+        NetworkInfoResDTO req;
+        req.set_offset(0);
+        req.set_time(static_cast<uint32_t>(std::time(nullptr)));
+
+        return send_request<NetworkInfoResDTO, NetworkInfoReqDTO>(CMD_NETWORK_INFO, req);
+    }
+
+    AppGetHistPowerReqDTO get_hist_power(std::uint32_t requested_time = 0, std::uint32_t requested_day = 0) {
+        ensure_connected();
+
+        if (requested_time == 0) {
+            requested_time = static_cast<std::uint32_t>(std::time(nullptr));
+        }
+
+        AppGetHistPowerReqDTO combined;
+        bool first = true;
+        std::uint32_t initial_absolute_start = 0;
+
+        for (int cp = 0;; ++cp) {
+            AppGetHistPowerResDTO req;
+            req.set_cp(cp);
+            req.set_offset(0);
+            req.set_requested_time(requested_time);
+            req.set_requested_day(requested_day);
+
+            AppGetHistPowerReqDTO part =
+                send_request<AppGetHistPowerResDTO, AppGetHistPowerReqDTO>(CMD_APP_HIST_POWER, req);
+
+            if (first) {
+                combined = part;
+                initial_absolute_start = part.absolute_start();
+                first = false;
+
+                if (part.ap() <= 1) {
+                    break;
+                }
+            } else {
+                combined.mutable_power_array()->MergeFrom(part.power_array());
+                combined.set_ap(part.ap());
+                combined.set_cp(part.cp());
+                combined.set_offset(part.offset());
+                combined.set_request_time(part.request_time());
+                combined.set_start_time(part.start_time());
+                combined.set_long_term_start(part.long_term_start());
+                combined.set_step_time(part.step_time());
+                combined.set_relative_power(part.relative_power());
+                combined.set_total_energy(part.total_energy());
+                combined.set_daily_energy(part.daily_energy());
+                combined.set_warning_number(part.warning_number());
+            }
+
+            if (cp + 1 >= combined.ap()) {
+                break;
+            }
+        }
+
+        combined.set_absolute_start(initial_absolute_start);
+        return combined;
+    }
+
+    AppGetHistEDReqDTO get_hist_energy_daily() {
+        ensure_connected();
+
+        AppGetHistEDResDTO req;
+        req.set_cp(0);
+        req.set_oft(0);
+        req.set_time(static_cast<uint32_t>(std::time(nullptr)));
+
+        return send_request<AppGetHistEDResDTO, AppGetHistEDReqDTO>(CMD_APP_HIST_ED, req);
+    }
+
+    AutoSearchReqDTO get_auto_search() {
+        ensure_connected();
+
+        AutoSearchResDTO req;
+        req.set_ymd_hms("1970-01-01 00:00:00");
+        req.set_offset(0);
+        req.set_current_package(0);
+        req.set_error_code(0);
+        req.set_time(static_cast<int32_t>(std::time(nullptr)));
+
+        return send_request<AutoSearchResDTO, AutoSearchReqDTO>(CMD_AUTO_SEARCH, req);
+    }
+
+    GPSTReqDTO get_gpst_data() {
+        ensure_connected();
+
+        GPSTResDTO req;
+        req.set_ymd_hms("1970-01-01 00:00:00");
+        req.set_offset(0);
+        req.set_package_now(0);
+        req.set_err_code(0);
+        req.set_time(static_cast<int32_t>(std::time(nullptr)));
+
+        return send_request<GPSTResDTO, GPSTReqDTO>(CMD_GPST_DATA, req);
+    }
+
+    DevConfigFetchReqDTO get_dev_config_fetch() {
+        ensure_connected();
+
+        DevConfigFetchResDTO req;
+        req.set_response_time(static_cast<int32_t>(std::time(nullptr)));
+        req.set_transaction_id(static_cast<std::int64_t>(std::time(nullptr)));
+        req.set_dtu_sn("");
+        req.set_dev_sn("");
+        req.set_current_package(0);
+        req.set_rule_type(0);
+
+        return send_request<DevConfigFetchResDTO, DevConfigFetchReqDTO>(CMD_DEV_CONFIG_FETCH, req);
+    }
+
+    DevConfigPutReqDTO get_dev_config_put_status() {
+        ensure_connected();
+
+        DevConfigPutResDTO req;
+        req.set_response_time(static_cast<int32_t>(std::time(nullptr)));
+        req.set_transaction_id(static_cast<std::int64_t>(std::time(nullptr)));
+        req.set_rule_id(0);
+        req.set_data("");
+        req.set_crc(0);
+        req.set_dtu_sn("");
+        req.set_dev_sn("");
+        req.set_cfg_data("");
+        req.set_cfg_crc(0);
+        req.set_total_packages(0);
+        req.set_current_package(0);
+        req.set_rule_type(0);
+
+        return send_request<DevConfigPutResDTO, DevConfigPutReqDTO>(CMD_DEV_CONFIG_PUT, req);
+    }
+
 private:
     struct Frame {
         uint16_t command = 0;
@@ -337,8 +552,20 @@ private:
         std::vector<uint8_t> payload;
     };
 
-    static constexpr uint16_t CMD_APP_INFO  = 0xA301;
-    static constexpr uint16_t CMD_REAL_DATA = 0xA311;
+    static constexpr uint16_t CMD_APP_INFO          = 0xA301;
+    static constexpr uint16_t CMD_HEARTBEAT         = 0xA302;
+    static constexpr uint16_t CMD_REAL_DATA_LEGACY  = 0xA303;
+    static constexpr uint16_t CMD_COMMAND_STATUS    = 0xA306;
+    static constexpr uint16_t CMD_DEV_CONFIG_FETCH  = 0xA307;
+    static constexpr uint16_t CMD_DEV_CONFIG_PUT    = 0xA308;
+    static constexpr uint16_t CMD_GET_CONFIG        = 0xA309;
+    static constexpr uint16_t CMD_SET_CONFIG        = 0xA310;
+    static constexpr uint16_t CMD_REAL_DATA         = 0xA311;
+    static constexpr uint16_t CMD_GPST_DATA         = 0xA312;
+    static constexpr uint16_t CMD_AUTO_SEARCH       = 0xA313;
+    static constexpr uint16_t CMD_NETWORK_INFO      = 0xA314;
+    static constexpr uint16_t CMD_APP_HIST_POWER    = 0xA315;
+    static constexpr uint16_t CMD_APP_HIST_ED       = 0xA316;
 
     std::string ip_;
     uint16_t port_;
@@ -499,5 +726,27 @@ private:
         if (socket_fd_ < 0) {
             throw std::runtime_error("not connected");
         }
+    }
+
+        template<typename RequestT, typename ResponseT>
+    ResponseT send_request(uint16_t command, const RequestT& request) {
+        std::string bytes;
+        if (!request.SerializeToString(&bytes)) {
+            throw std::runtime_error("failed to serialize protobuf request");
+        }
+
+        const std::vector<uint8_t> payload(bytes.begin(), bytes.end());
+        const uint16_t seq = next_seq();
+        const std::vector<uint8_t> frame = build_frame(payload, command, seq);
+
+        write_all(frame);
+        Frame reply = read_frame();
+
+        ResponseT response;
+        if (!response.ParseFromArray(reply.payload.data(), static_cast<int>(reply.payload.size()))) {
+            throw std::runtime_error("failed to parse protobuf response");
+        }
+
+        return response;
     }
 };

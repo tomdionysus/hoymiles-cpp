@@ -7,10 +7,30 @@
 
 static void usage(const char* prog) {
     std::cerr
-        << "Usage: " << prog << " --ip <ipaddress> [--port <port>] [--mode real|info|both]\n"
+        << "Usage: " << prog << " --ip <ipaddress> [--port <port>] <command>\n"
+        << "\n"
+        << "Commands:\n"
+        << "  info\n"
+        << "  real\n"
+        << "  real-all\n"
+        << "  heartbeat\n"
+        << "  config\n"
+        << "  network\n"
+        << "  hist-power\n"
+        << "  hist-ed\n"
+        << "  gpst\n"
+        << "  auto-search\n"
+        << "  dev-config-fetch\n"
+        << "  dev-config-put-status\n"
+        << "\n"
+        << "Examples:\n"
+        << "  " << prog << " --ip 192.168.1.50 info\n"
+        << "  " << prog << " --ip 192.168.1.50 real\n"
+        << "  " << prog << " --ip 192.168.1.50 hist-power\n"
+        << "\n"
+        << "Options:\n"
         << "  --ip <ipaddress>   IPv4 address of the device\n"
         << "  --port <port>      TCP port (default 10081)\n"
-        << "  --mode <mode>      real, info, or both (default both)\n"
         << "  --help             Print usage/help\n";
 }
 
@@ -49,6 +69,29 @@ static bool arg_get_u16(int argc, char** argv, const std::string& key, uint16_t&
     } catch (...) {
         return false;
     }
+}
+
+static std::string get_command(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        const std::string a = argv[i];
+
+        if (a == "--help") {
+            continue;
+        }
+
+        if (a == "--ip" || a == "--port") {
+            ++i;
+            continue;
+        }
+
+        if (!a.empty() && a.rfind("--", 0) == 0) {
+            continue;
+        }
+
+        return a;
+    }
+
+    return "";
 }
 
 static std::string format_timestamp(std::uint32_t ts) {
@@ -152,6 +195,16 @@ static void print_real_data(const HoymilesMicroinverter::DecodedRealData& data) 
     std::cout << "\n";
 }
 
+template<typename ProtoT>
+static void print_debug_message(const std::string& title, const ProtoT& msg) {
+    std::cout << title << "\n";
+    for (std::size_t i = 0; i < title.size(); ++i) {
+        std::cout << "=";
+    }
+    std::cout << "\n";
+    std::cout << msg.DebugString() << "\n";
+}
+
 int main(int argc, char** argv) {
     GOOGLE_PROTOBUF_VERIFY_VERSION;
 
@@ -176,11 +229,48 @@ int main(int argc, char** argv) {
             return 1;
         }
 
+        const std::string command = get_command(argc, argv);
+        if (command.empty()) {
+            usage(argv[0]);
+            google::protobuf::ShutdownProtobufLibrary();
+            return 1;
+        }
+
         HoymilesMicroinverter inverter(ip, port);
         inverter.connect();
 
-        // print_info(inverter.get_decoded_info());
-        print_real_data(inverter.get_decoded_real_data());
+        if (command == "info") {
+            print_info(inverter.get_decoded_info());
+        } else if (command == "real") {
+            print_real_data(inverter.get_decoded_real_data());
+        } else if (command == "real-all") {
+            const auto raw = inverter.get_real_data_complete();
+            print_real_data(HoymilesMicroinverter::decode_real_data(raw));
+        } else if (command == "heartbeat") {
+            print_debug_message("Heartbeat", inverter.get_heartbeat());
+        } else if (command == "config") {
+            print_debug_message("Config", inverter.get_config());
+        } else if (command == "network") {
+            print_debug_message("Network Info", inverter.get_network_info());
+        } else if (command == "hist-power") {
+            print_debug_message("Historical Power", inverter.get_hist_power());
+        } else if (command == "hist-ed") {
+            print_debug_message("Historical Energy Daily", inverter.get_hist_energy_daily());
+        } else if (command == "gpst") {
+            print_debug_message("GPST Data", inverter.get_gpst_data());
+        } else if (command == "auto-search") {
+            print_debug_message("Auto Search", inverter.get_auto_search());
+        } else if (command == "dev-config-fetch") {
+            print_debug_message("Dev Config Fetch", inverter.get_dev_config_fetch());
+        } else if (command == "dev-config-put-status") {
+            print_debug_message("Dev Config Put Status", inverter.get_dev_config_put_status());
+        } else {
+            inverter.disconnect();
+            std::cerr << "error: unknown command: " << command << "\n\n";
+            usage(argv[0]);
+            google::protobuf::ShutdownProtobufLibrary();
+            return 1;
+        }
 
         inverter.disconnect();
         google::protobuf::ShutdownProtobufLibrary();

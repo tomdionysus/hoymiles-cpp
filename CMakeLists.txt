@@ -23,16 +23,16 @@ file(GLOB_RECURSE PROTO_FILES
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_FILES})
 
 # Build executable
-add_executable(device_info_test
-    src/device_info_test_main.cpp
+add_executable(hoymiles_cpp
+    src/hoymiles_cpp.cpp
     ${PROTO_SRCS}
     ${PROTO_HDRS}
 )
 
 # Link protobuf (this propagates Abseil correctly)
-target_link_libraries(device_info_test PRIVATE protobuf::libprotobuf)
+target_link_libraries(hoymiles_cpp PRIVATE protobuf::libprotobuf)
 
 # Include generated headers
-target_include_directories(device_info_test PRIVATE
+target_include_directories(hoymiles_cpp PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR}
 )
