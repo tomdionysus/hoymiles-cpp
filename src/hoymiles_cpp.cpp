@@ -6,32 +6,31 @@
 #include "HoymilesMicroinverter.hpp"
 
 static void usage(const char* prog) {
-    std::cerr
-        << "Usage: " << prog << " --ip <ipaddress> [--port <port>] <command>\n"
-        << "\n"
-        << "Commands:\n"
-        << "  info\n"
-        << "  real\n"
-        << "  real-all\n"
-        << "  heartbeat\n"
-        << "  config\n"
-        << "  network\n"
-        << "  hist-power\n"
-        << "  hist-ed\n"
-        << "  gpst\n"
-        << "  auto-search\n"
-        << "  dev-config-fetch\n"
-        << "  dev-config-put-status\n"
-        << "\n"
-        << "Examples:\n"
-        << "  " << prog << " --ip 192.168.1.50 info\n"
-        << "  " << prog << " --ip 192.168.1.50 real\n"
-        << "  " << prog << " --ip 192.168.1.50 hist-power\n"
-        << "\n"
-        << "Options:\n"
-        << "  --ip <ipaddress>   IPv4 address of the device\n"
-        << "  --port <port>      TCP port (default 10081)\n"
-        << "  --help             Print usage/help\n";
+    std::cerr << "Usage: " << prog << " --ip <ipaddress> [--port <port>] <command>\n"
+              << "\n"
+              << "Commands:\n"
+              << "  info\n"
+              << "  real\n"
+              << "  real-all\n"
+              << "  heartbeat\n"
+              << "  config\n"
+              << "  network\n"
+              << "  hist-power\n"
+              << "  hist-ed\n"
+              << "  gpst\n"
+              << "  auto-search\n"
+              << "  dev-config-fetch\n"
+              << "  dev-config-put-status\n"
+              << "\n"
+              << "Examples:\n"
+              << "  " << prog << " --ip 192.168.1.50 info\n"
+              << "  " << prog << " --ip 192.168.1.50 real\n"
+              << "  " << prog << " --ip 192.168.1.50 hist-power\n"
+              << "\n"
+              << "Options:\n"
+              << "  --ip <ipaddress>   IPv4 address of the device\n"
+              << "  --port <port>      TCP port (default 10081)\n"
+              << "  --help             Print usage/help\n";
 }
 
 static bool arg_has(int argc, char** argv, const std::string& key) {
@@ -131,13 +130,9 @@ static void print_info(const HoymilesMicroinverter::DecodedInfo& info) {
         std::cout << "------------\n";
         for (std::size_t i = 0; i < info.pv_info.size(); ++i) {
             const auto& pv = info.pv_info[i];
-            std::cout
-                << "PV[" << i << "]"
-                << " serial=" << pv.serial_number
-                << " sw=" << pv.sw_version
-                << " hw=" << pv.hw_version
-                << " grid_profile=" << pv.grid_profile
-                << "\n";
+            std::cout << "PV[" << i << "]"
+                      << " serial=" << pv.serial_number << " sw=" << pv.sw_version << " hw=" << pv.hw_version
+                      << " grid_profile=" << pv.grid_profile << "\n";
         }
     }
 
@@ -165,7 +160,8 @@ static void print_real_data(const HoymilesMicroinverter::DecodedRealData& data) 
             std::cout << "  Grid voltage     : " << std::fixed << std::setprecision(1) << s.voltage_v << " V\n";
             std::cout << "  Grid frequency   : " << std::fixed << std::setprecision(2) << s.frequency_hz << " Hz\n";
             std::cout << "  Active power     : " << std::fixed << std::setprecision(1) << s.active_power_w << " W\n";
-            std::cout << "  Reactive power   : " << std::fixed << std::setprecision(1) << s.reactive_power_var << " var\n";
+            std::cout << "  Reactive power   : " << std::fixed << std::setprecision(1) << s.reactive_power_var
+                      << " var\n";
             std::cout << "  AC current       : " << std::fixed << std::setprecision(1) << s.current_a << " A\n";
             std::cout << "  Power factor     : " << std::fixed << std::setprecision(3) << s.power_factor << "\n";
             std::cout << "  Temperature      : " << std::fixed << std::setprecision(1) << s.temperature_c << " C\n";
@@ -187,7 +183,8 @@ static void print_real_data(const HoymilesMicroinverter::DecodedRealData& data) 
             std::cout << "  Current          : " << std::fixed << std::setprecision(1) << pv.current_a << " A\n";
             std::cout << "  Power            : " << std::fixed << std::setprecision(1) << pv.power_w << " W\n";
             std::cout << "  Daily energy     : " << std::fixed << std::setprecision(0) << pv.energy_daily_wh << " Wh\n";
-            std::cout << "  Total energy     : " << std::fixed << std::setprecision(1) << pv.energy_total_kwh << " kWh\n";
+            std::cout << "  Total energy     : " << std::fixed << std::setprecision(1) << pv.energy_total_kwh
+                      << " kWh\n";
             std::cout << "  Error code       : " << pv.error_code << "\n";
         }
     }
@@ -195,8 +192,7 @@ static void print_real_data(const HoymilesMicroinverter::DecodedRealData& data) 
     std::cout << "\n";
 }
 
-template<typename ProtoT>
-static void print_debug_message(const std::string& title, const ProtoT& msg) {
+template <typename ProtoT> static void print_debug_message(const std::string& title, const ProtoT& msg) {
     std::cout << title << "\n";
     for (std::size_t i = 0; i < title.size(); ++i) {
         std::cout << "=";

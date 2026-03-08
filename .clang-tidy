@@ -1,0 +1,13 @@
+Checks: >
+  -*,
+  bugprone-*,
+  performance-*,
+  readability-*,
+  modernize-*,
+  clang-analyzer-*
+WarningsAsErrors: ''
+HeaderFilterRegex: '^.*/src/.*\.(hpp|h|hh|hxx)$'
+FormatStyle: none
+CheckOptions:
+  - key: modernize-use-trailing-return-type.MinTypeNameLength
+    value: '0'

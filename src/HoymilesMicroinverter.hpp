@@ -14,20 +14,20 @@
 #include <utility>
 #include <vector>
 
-#include "APPInfomationData.pb.h"
-#include "RealDataNew.pb.h"
 #include "APPHeartbeatPB.pb.h"
+#include "APPInfomationData.pb.h"
 #include "AppGetHistED.pb.h"
 #include "AppGetHistPower.pb.h"
 #include "AutoSearch.pb.h"
 #include "DevConfig.pb.h"
-#include "GetConfig.pb.h"
 #include "GPSTData.pb.h"
+#include "GetConfig.pb.h"
 #include "NetworkInfo.pb.h"
 #include "RealData.pb.h"
+#include "RealDataNew.pb.h"
 
 class HoymilesMicroinverter {
-public:
+  public:
     struct DecodedPvInfo {
         std::string serial_number;
         int sw_version = 0;
@@ -67,14 +67,14 @@ public:
         int raw_link_status = 0;
         int raw_power_limit = 0;
 
-        double voltage_v = 0.0;        // raw / 10
-        double frequency_hz = 0.0;     // raw / 100
-        double active_power_w = 0.0;   // raw
+        double voltage_v = 0.0;          // raw / 10
+        double frequency_hz = 0.0;       // raw / 100
+        double active_power_w = 0.0;     // raw
         double reactive_power_var = 0.0; // raw
-        double current_a = 0.0;        // raw / 10
-        double power_factor = 0.0;     // raw / 1000 (best current guess)
-        double temperature_c = 0.0;    // raw
-        bool online = false;           // raw_link_status != 0
+        double current_a = 0.0;          // raw / 10
+        double power_factor = 0.0;       // raw / 1000 (best current guess)
+        double temperature_c = 0.0;      // raw
+        bool online = false;             // raw_link_status != 0
     };
 
     struct DecodedPvData {
@@ -88,11 +88,11 @@ public:
         int raw_energy_daily = 0;
         int raw_error_code = 0;
 
-        double voltage_v = 0.0;          // raw / 10
-        double current_a = 0.0;          // raw / 10
-        double power_w = 0.0;            // raw
-        double energy_total_kwh = 0.0;   // raw / 10
-        double energy_daily_wh = 0.0;    // raw
+        double voltage_v = 0.0;        // raw / 10
+        double current_a = 0.0;        // raw / 10
+        double power_w = 0.0;          // raw
+        double energy_total_kwh = 0.0; // raw / 10
+        double energy_daily_wh = 0.0;  // raw
         int error_code = 0;
     };
 
@@ -114,22 +114,15 @@ public:
     };
 
     HoymilesMicroinverter(std::string ip, uint16_t port = 10081)
-        : ip_(std::move(ip)),
-          port_(port),
-          socket_fd_(-1),
-          next_sequence_(1) {}
+        : ip_(std::move(ip)), port_(port), socket_fd_(-1), next_sequence_(1) {}
 
-    ~HoymilesMicroinverter() {
-        disconnect();
-    }
+    ~HoymilesMicroinverter() { disconnect(); }
 
     HoymilesMicroinverter(const HoymilesMicroinverter&) = delete;
     HoymilesMicroinverter& operator=(const HoymilesMicroinverter&) = delete;
 
     HoymilesMicroinverter(HoymilesMicroinverter&& other) noexcept
-        : ip_(std::move(other.ip_)),
-          port_(other.port_),
-          socket_fd_(other.socket_fd_),
+        : ip_(std::move(other.ip_)), port_(other.port_), socket_fd_(other.socket_fd_),
           next_sequence_(other.next_sequence_) {
         other.socket_fd_ = -1;
         other.next_sequence_ = 1;
@@ -185,9 +178,7 @@ public:
         }
     }
 
-    bool is_connected() const noexcept {
-        return socket_fd_ >= 0;
-    }
+    bool is_connected() const noexcept { return socket_fd_ >= 0; }
 
     APPInfoDataReqDTO get_info() {
         ensure_connected();
@@ -225,13 +216,9 @@ public:
         return response;
     }
 
-    DecodedInfo get_decoded_info() {
-        return decode_info(get_info());
-    }
+    DecodedInfo get_decoded_info() { return decode_info(get_info()); }
 
-    DecodedRealData get_decoded_real_data() {
-        return decode_real_data(get_real_data());
-    }
+    DecodedRealData get_decoded_real_data() { return decode_real_data(get_real_data()); }
 
     static DecodedInfo decode_info(const APPInfoDataReqDTO& msg) {
         DecodedInfo out;
@@ -337,7 +324,7 @@ public:
         return out;
     }
 
-        HBReqDTO get_heartbeat() {
+    HBReqDTO get_heartbeat() {
         ensure_connected();
 
         HBResDTO req;
@@ -374,8 +361,7 @@ public:
             req.set_offset(0);
             req.set_time(static_cast<int32_t>(std::time(nullptr)));
 
-            RealDataNewReqDTO part =
-                send_request<RealDataNewResDTO, RealDataNewReqDTO>(CMD_REAL_DATA, req);
+            RealDataNewReqDTO part = send_request<RealDataNewResDTO, RealDataNewReqDTO>(CMD_REAL_DATA, req);
 
             if (cp == 0) {
                 combined = part;
@@ -543,7 +529,7 @@ public:
         return send_request<DevConfigPutResDTO, DevConfigPutReqDTO>(CMD_DEV_CONFIG_PUT, req);
     }
 
-private:
+  private:
     struct Frame {
         uint16_t command = 0;
         uint16_t sequence = 0;
@@ -552,20 +538,20 @@ private:
         std::vector<uint8_t> payload;
     };
 
-    static constexpr uint16_t CMD_APP_INFO          = 0xA301;
-    static constexpr uint16_t CMD_HEARTBEAT         = 0xA302;
-    static constexpr uint16_t CMD_REAL_DATA_LEGACY  = 0xA303;
-    static constexpr uint16_t CMD_COMMAND_STATUS    = 0xA306;
-    static constexpr uint16_t CMD_DEV_CONFIG_FETCH  = 0xA307;
-    static constexpr uint16_t CMD_DEV_CONFIG_PUT    = 0xA308;
-    static constexpr uint16_t CMD_GET_CONFIG        = 0xA309;
-    static constexpr uint16_t CMD_SET_CONFIG        = 0xA310;
-    static constexpr uint16_t CMD_REAL_DATA         = 0xA311;
-    static constexpr uint16_t CMD_GPST_DATA         = 0xA312;
-    static constexpr uint16_t CMD_AUTO_SEARCH       = 0xA313;
-    static constexpr uint16_t CMD_NETWORK_INFO      = 0xA314;
-    static constexpr uint16_t CMD_APP_HIST_POWER    = 0xA315;
-    static constexpr uint16_t CMD_APP_HIST_ED       = 0xA316;
+    static constexpr uint16_t CMD_APP_INFO = 0xA301;
+    static constexpr uint16_t CMD_HEARTBEAT = 0xA302;
+    static constexpr uint16_t CMD_REAL_DATA_LEGACY = 0xA303;
+    static constexpr uint16_t CMD_COMMAND_STATUS = 0xA306;
+    static constexpr uint16_t CMD_DEV_CONFIG_FETCH = 0xA307;
+    static constexpr uint16_t CMD_DEV_CONFIG_PUT = 0xA308;
+    static constexpr uint16_t CMD_GET_CONFIG = 0xA309;
+    static constexpr uint16_t CMD_SET_CONFIG = 0xA310;
+    static constexpr uint16_t CMD_REAL_DATA = 0xA311;
+    static constexpr uint16_t CMD_GPST_DATA = 0xA312;
+    static constexpr uint16_t CMD_AUTO_SEARCH = 0xA313;
+    static constexpr uint16_t CMD_NETWORK_INFO = 0xA314;
+    static constexpr uint16_t CMD_APP_HIST_POWER = 0xA315;
+    static constexpr uint16_t CMD_APP_HIST_ED = 0xA316;
 
     std::string ip_;
     uint16_t port_;
@@ -595,9 +581,7 @@ private:
     }
 
     static uint16_t read_u16_be(const uint8_t* data) {
-        return static_cast<uint16_t>(
-            (static_cast<uint16_t>(data[0]) << 8) |
-            static_cast<uint16_t>(data[1]));
+        return static_cast<uint16_t>((static_cast<uint16_t>(data[0]) << 8) | static_cast<uint16_t>(data[1]));
     }
 
     static std::vector<uint8_t> serialize_info_request() {
@@ -632,10 +616,7 @@ private:
         return std::vector<uint8_t>(bytes.begin(), bytes.end());
     }
 
-    std::vector<uint8_t> build_frame(
-        const std::vector<uint8_t>& payload,
-        uint16_t command,
-        uint16_t sequence) const {
+    std::vector<uint8_t> build_frame(const std::vector<uint8_t>& payload, uint16_t command, uint16_t sequence) const {
 
         std::vector<uint8_t> frame;
         frame.reserve(10 + payload.size());
@@ -728,8 +709,7 @@ private:
         }
     }
 
-        template<typename RequestT, typename ResponseT>
-    ResponseT send_request(uint16_t command, const RequestT& request) {
+    template <typename RequestT, typename ResponseT> ResponseT send_request(uint16_t command, const RequestT& request) {
         std::string bytes;
         if (!request.SerializeToString(&bytes)) {
             throw std::runtime_error("failed to serialize protobuf request");
