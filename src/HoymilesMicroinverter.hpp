@@ -67,14 +67,14 @@ class HoymilesMicroinverter {
         int raw_link_status = 0;
         int raw_power_limit = 0;
 
-        double voltage_v = 0.0;          // raw / 10
-        double frequency_hz = 0.0;       // raw / 100
-        double active_power_w = 0.0;     // raw
-        double reactive_power_var = 0.0; // raw
-        double current_a = 0.0;          // raw / 10
-        double power_factor = 0.0;       // raw / 1000 (best current guess)
-        double temperature_c = 0.0;      // raw
-        bool online = false;             // raw_link_status != 0
+        double voltage_v = 0.0;
+        double frequency_hz = 0.0;
+        double active_power_w = 0.0;
+        double reactive_power_var = 0.0;
+        double current_a = 0.0;
+        double power_factor = 0.0;
+        double temperature_c = 0.0;
+        bool online = false;
     };
 
     struct DecodedPvData {
@@ -88,11 +88,11 @@ class HoymilesMicroinverter {
         int raw_energy_daily = 0;
         int raw_error_code = 0;
 
-        double voltage_v = 0.0;        // raw / 10
-        double current_a = 0.0;        // raw / 10
-        double power_w = 0.0;          // raw
-        double energy_total_kwh = 0.0; // raw / 10
-        double energy_daily_wh = 0.0;  // raw
+        double voltage_v = 0.0;
+        double current_a = 0.0;
+        double power_w = 0.0;
+        double energy_total_kwh = 0.0;
+        double energy_daily_wh = 0.0;
         int error_code = 0;
     };
 
@@ -286,8 +286,8 @@ class HoymilesMicroinverter {
 
             item.voltage_v = static_cast<double>(sgs.voltage()) / 10.0;
             item.frequency_hz = static_cast<double>(sgs.frequency()) / 100.0;
-            item.active_power_w = static_cast<double>(sgs.active_power());
-            item.reactive_power_var = static_cast<double>(sgs.reactive_power());
+            item.active_power_w = static_cast<double>(sgs.active_power()) / 10.0;
+            item.reactive_power_var = static_cast<double>(sgs.reactive_power()) / 10.0;
             item.current_a = static_cast<double>(sgs.current()) / 10.0;
             item.power_factor = static_cast<double>(sgs.power_factor()) / 1000.0;
             item.temperature_c = (static_cast<double>(sgs.temperature()) - 32.0) * (5.0 / 9.0);
@@ -312,8 +312,8 @@ class HoymilesMicroinverter {
             item.raw_error_code = pv.error_code();
 
             item.voltage_v = static_cast<double>(pv.voltage()) / 10.0;
-            item.current_a = static_cast<double>(pv.current()) / 10.0;
-            item.power_w = static_cast<double>(pv.power());
+            item.current_a = static_cast<double>(pv.current()) / 100.0;
+            item.power_w = static_cast<double>(pv.power()) / 10.0;
             item.energy_total_kwh = static_cast<double>(pv.energy_total()) / 10.0;
             item.energy_daily_wh = static_cast<double>(pv.energy_daily());
             item.error_code = pv.error_code();
